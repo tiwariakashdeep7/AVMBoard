@@ -23,6 +23,7 @@ def upload_csv_to_gcs(local_file_path, bucket_name, destination_blob_name):
 
         # Specify your Google Cloud Project ID
         project_id = "skilful-sensor-457808-v8"  # Replace with your actual project ID
+        os.environ["GOOGLE_CLOUD_PROJECT"] = skilful-sensor-457808-v8
         storage_client = storage.Client()
         bucket = storage_client.bucket(bucket_name)
         blob = bucket.blob(destination_blob_name)
@@ -30,6 +31,7 @@ def upload_csv_to_gcs(local_file_path, bucket_name, destination_blob_name):
         st.success("CSV uploaded to GCS successfully.")
     except Exception as e:
         st.error(f"Failed to upload CSV to GCS: {e}")
+        st.error(f"Environment Project ID: {os.getenv('GOOGLE_CLOUD_PROJECT')}")
 
 # Load Data
 df = pd.read_csv("house_data_with_location.csv")  # Assumes columns: lat, long, plus home features
