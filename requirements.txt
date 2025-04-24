@@ -3,5 +3,6 @@ pandas
 numpy
 scikit-learn
 geopandas
+googlemaps
 folium
 streamlit-folium
