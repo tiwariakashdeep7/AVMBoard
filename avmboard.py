@@ -20,6 +20,9 @@ GCS_BUCKET_NAME = "registration_data_realstate"
 # Function to upload file to GCS
 def upload_csv_to_gcs(local_file_path, bucket_name, destination_blob_name):
     try:
+
+        # Specify your Google Cloud Project ID
+        project_id = "skilful-sensor-457808-v8"  # Replace with your actual project ID
         storage_client = storage.Client()
         bucket = storage_client.bucket(bucket_name)
         blob = bucket.blob(destination_blob_name)
