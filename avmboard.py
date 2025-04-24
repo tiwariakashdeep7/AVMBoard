@@ -12,7 +12,7 @@ def load_data():
 
 data = load_data()
 st.title("🏠 Automated Valuation Model (AVM) Dashboard")
-st.map(data[['latitude', 'longitude']])
+st.map(data[['lat', 'lng']].rename(columns={'lat': 'latitude', 'lng': 'longitude'}))
 
 # Registration Form
 st.header("📝 Register for Updates")
