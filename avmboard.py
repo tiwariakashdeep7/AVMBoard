@@ -1,4 +1,4 @@
-# AVM with Geospatial Data + Google Maps Geocoding + Google Maps Embed + Web Dashboard
+# AVM with Geospatial Data + Google Maps Geocoding + Google Maps Embed + Web Dashboard + Registration Form to CSV and GCS
 
 import pandas as pd
 import numpy as np
@@ -7,9 +7,26 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error
 import streamlit as st
+from google.cloud import storage
+import json
+import os
 
 # Google Maps API Setup
 gmaps = googlemaps.Client(key="AIzaSyAlCmkA_-4Cij0Gab4tU17Hi0kzl4P5U6g")
+
+# GCS Bucket Name
+GCS_BUCKET_NAME = "registration_data_realstate"
+
+# Function to upload file to GCS
+def upload_csv_to_gcs(local_file_path, bucket_name, destination_blob_name):
+    try:
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(bucket_name)
+        blob = bucket.blob(destination_blob_name)
+        blob.upload_from_filename(local_file_path)
+        st.success("CSV uploaded to GCS successfully.")
+    except Exception as e:
+        st.error(f"Failed to upload CSV to GCS: {e}")
 
 # Load Data
 df = pd.read_csv("house_data_with_location.csv")  # Assumes columns: lat, long, plus home features
@@ -32,7 +49,32 @@ st.set_page_config(layout="wide")
 st.title("Automated Real Estate Valuation Tool")
 st.write(f"### Model MAE: ${mae:,.2f}")
 
-# Input Form
+# Registration Form
+st.sidebar.header("Register to Access Full Dashboard")
+with st.sidebar.form("registration_form"):
+    name = st.text_input("Full Name")
+    email = st.text_input("Email")
+    phone = st.text_input("Phone Number")
+    city = st.text_input("City")
+    purpose = st.selectbox("Purpose", ["Buying", "Selling", "Research", "Other"])
+    submitted = st.form_submit_button("Register")
+
+if submitted:
+    user_data = {
+        "name": name,
+        "email": email,
+        "phone": phone,
+        "city": city,
+        "purpose": purpose,
+        "timestamp": pd.Timestamp.now().isoformat()
+    }
+    df_user = pd.DataFrame([user_data])
+    local_csv = f"temp_registration_{email.replace('@', '_')}.csv"
+    df_user.to_csv(local_csv, index=False)
+    upload_csv_to_gcs(local_csv, GCS_BUCKET_NAME, f"registrations/{local_csv}")
+    os.remove(local_csv)
+
+# Input Form for AVM
 st.sidebar.header("Property Info")
 bedrooms = st.sidebar.slider("Bedrooms", 1, 10, 3)
 bathrooms = st.sidebar.slider("Bathrooms", 1, 5, 2)
