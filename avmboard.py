@@ -8,11 +8,25 @@ from datetime import datetime
 # Load AVM Data
 @st.cache_data
 def load_data():
-    return pd.read_csv("house_data_with_location.csv")
+    df = pd.read_csv("house_data_with_location.csv")
+
+    # Try to standardize latitude and longitude column names
+    col_map = {col.lower(): col for col in df.columns}
+    lat_col = col_map.get("latitude") or col_map.get("lat")
+    lon_col = col_map.get("longitude") or col_map.get("lng") or col_map.get("lon")
+
+    if lat_col and lon_col:
+        df = df.rename(columns={lat_col: "latitude", lon_col: "longitude"})
+    else:
+        st.warning("Latitude and longitude columns not found in CSV. Map cannot be displayed.")
+        return pd.DataFrame()  # Return empty DataFrame if missing
+
+    return df
 
 data = load_data()
 st.title("🏠 Automated Valuation Model (AVM) Dashboard")
-st.map(data[['lat', 'lng']].rename(columns={'lat': 'latitude', 'lng': 'longitude'}))
+if not data.empty:
+    st.map(data[['latitude', 'longitude']])
 
 # Registration Form
 st.header("📝 Register for Updates")
