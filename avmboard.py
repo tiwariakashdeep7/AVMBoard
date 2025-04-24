@@ -1,14 +1,17 @@
-# AVM with Geospatial Data + Web Dashboard
+# AVM with Geospatial Data + Google Maps Geocoding + Web Dashboard
 
 import pandas as pd
 import numpy as np
-import geopandas as gpd
+import googlemaps
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error
 import streamlit as st
 import folium
 from streamlit_folium import st_folium
+
+# Google Maps API Setup
+gmaps = googlemaps.Client(key="AIzaSyAlCmkA_-4Cij0Gab4tU17Hi0kzl4P5U6g")
 
 # Load Data
 df = pd.read_csv("house_data_with_location.csv")  # Assumes columns: lat, long, plus home features
@@ -39,29 +42,46 @@ sqft_living = st.sidebar.slider("Sqft Living", 300, 10000, 1800)
 sqft_lot = st.sidebar.slider("Sqft Lot", 500, 20000, 5000)
 floors = st.sidebar.slider("Floors", 1, 3, 1)
 zipcode = st.sidebar.selectbox("Zipcode", sorted(df['zipcode'].unique()))
-latitude = st.sidebar.number_input("Latitude", value=47.6062)
-longitude = st.sidebar.number_input("Longitude", value=-122.3321)
+address = st.sidebar.text_input("Property Address", "1600 Amphitheatre Parkway, Mountain View, CA")
 year_built = st.sidebar.number_input("Year Built", 1900, 2025, 2000)
 age = 2025 - year_built
 
-# Prediction
-new_input = pd.DataFrame([{
-    'bedrooms': bedrooms,
-    'bathrooms': bathrooms,
-    'sqft_living': sqft_living,
-    'sqft_lot': sqft_lot,
-    'floors': floors,
-    'zipcode': zipcode,
-    'lat': latitude,
-    'long': longitude,
-    'age': age
-}])
-predicted_price = model.predict(new_input)[0]
+# Geocode the address
+latitude, longitude = None, None
+if address:
+    try:
+        geocode_result = gmaps.geocode(address)
+        if geocode_result:
+            location = geocode_result[0]['geometry']['location']
+            latitude = location['lat']
+            longitude = location['lng']
+        else:
+            st.error("Address not found. Please check the input.")
+    except Exception as e:
+        st.error(f"Geocoding error: {e}")
 
-st.subheader("Predicted Property Price")
-st.success(f"${predicted_price:,.2f}")
+if latitude and longitude:
+    # Prediction
+    new_input = pd.DataFrame([{
+        'bedrooms': bedrooms,
+        'bathrooms': bathrooms,
+        'sqft_living': sqft_living,
+        'sqft_lot': sqft_lot,
+        'floors': floors,
+        'zipcode': zipcode,
+        'lat': latitude,
+        'long': longitude,
+        'age': age
+    }])
 
-# Show Map
-m = folium.Map(location=[latitude, longitude], zoom_start=14)
-folium.Marker([latitude, longitude], popup=f"Predicted: ${predicted_price:,.0f}").add_to(m)
-st_folium(m, width=700, height=450)
+    predicted_price = model.predict(new_input)[0]
+
+    st.subheader("Predicted Property Price")
+    st.success(f"${predicted_price:,.2f}")
+
+    # Show Map
+    m = folium.Map(location=[latitude, longitude], zoom_start=14)
+    folium.Marker([latitude, longitude], popup=f"Predicted: ${predicted_price:,.0f}").add_to(m)
+    st_folium(m, width=700, height=450)
+else:
+    st.warning("Enter a valid address to generate prediction and map.")
