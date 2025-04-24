@@ -1,4 +1,4 @@
-# AVM with Geospatial Data + Google Maps Geocoding + Web Dashboard
+# AVM with Geospatial Data + Google Maps Geocoding + Google Maps Embed + Web Dashboard
 
 import pandas as pd
 import numpy as np
@@ -7,8 +7,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error
 import streamlit as st
-import folium
-from streamlit_folium import st_folium
 
 # Google Maps API Setup
 gmaps = googlemaps.Client(key="AIzaSyAlCmkA_-4Cij0Gab4tU17Hi0kzl4P5U6g")
@@ -79,9 +77,17 @@ if latitude and longitude:
     st.subheader("Predicted Property Price")
     st.success(f"${predicted_price:,.2f}")
 
-    # Show Map
-    m = folium.Map(location=[latitude, longitude], zoom_start=14)
-    folium.Marker([latitude, longitude], popup=f"Predicted: ${predicted_price:,.0f}").add_to(m)
-    st_folium(m, width=700, height=450)
+    # Show Google Map instead of folium
+    map_url = f"https://www.google.com/maps/embed/v1/place?key=AIzaSyAlCmkA_-4Cij0Gab4tU17Hi0kzl4P5U6g&q={latitude},{longitude}"
+    st.markdown(f"""
+    <iframe
+        width="100%"
+        height="450"
+        style="border:0;"
+        loading="lazy"
+        allowfullscreen
+        src="{map_url}">
+    </iframe>
+    """, unsafe_allow_html=True)
 else:
     st.warning("Enter a valid address to generate prediction and map.")
